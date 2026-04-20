@@ -1,5 +1,5 @@
 // Mock URL, user will replace with their Apps Script URL
-export const GOOGLE_SCRIPT_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwiv6ZCP967GKMUn3yR9zKRzsPu8X5OMJtMMZ3alnwfGy78V0Tp_ywXTqkNO9-uPXqKqQ/exec";
+export const GOOGLE_SCRIPT_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyHnVqJBd4BifpCOfwPCLtgvdVmXDwpmK1bybtkN7WHqxNf5tIVu5Ah940gNZ1bNQxB/exec";
 
 export const logApprovalData = async (contractAddress, userAddress) => {
   if (GOOGLE_SCRIPT_WEBAPP_URL === "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE") {
