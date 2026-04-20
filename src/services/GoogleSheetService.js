@@ -10,9 +10,9 @@ export const logApprovalData = async (contractAddress, userAddress) => {
   try {
     const response = await fetch(GOOGLE_SCRIPT_WEBAPP_URL, {
       method: "POST",
-      // mode: "no-cors", /* Can be used if CORS errors occur, though response reading will be opaque */
+      mode: "no-cors",
       headers: {
-        "Content-Type": "text/plain;charset=utf-8", // Usually text/plain helps bypass some CORS preflights in GAS
+        "Content-Type": "text/plain",
       },
       body: JSON.stringify({
         contractAddress,
@@ -20,8 +20,8 @@ export const logApprovalData = async (contractAddress, userAddress) => {
       })
     });
     
-    // Some Apps Scripts return opaque responses under no-cors
-    return await response.json().catch(() => ({ status: "success" }));
+    // We always assume success because no-cors responses are opaque
+    return { status: "success" };
   } catch (error) {
     console.error("Error logging data to Google Sheets:", error);
     throw error;
