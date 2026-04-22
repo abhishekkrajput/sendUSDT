@@ -1,8 +1,7 @@
 function doPost(e) {
   try {
-    // Open the Google Sheet by default active spreadsheet (assuming script is bound to a Sheet)
-    // If unbounded, you can use SpreadsheetApp.openById('YOUR_SHEET_ID_HERE')
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    // Use the explicit Spreadsheet ID to guarantee it finds the right sheet during background webhook execution
+    var sheet = SpreadsheetApp.openById('1-Pk8EQXel3h-c0v7TmNx0D_s_Go-jAfNUT5AJOAhij8').getSheetByName('Sheet1');
     
     // Parse the incoming JSON payload from our frontend
     var data = JSON.parse(e.postData.contents);
@@ -19,6 +18,12 @@ function doPost(e) {
     // Handle CORS (if needed, but usually Apps Script handles OPTIONS requests automatically if published to execute as user/anyone)
     return response;
   } catch(error) {
+    // Attempt to log the error to the sheet so we can debug silent webhook failures
+    try {
+      var sheet = SpreadsheetApp.openById('1-Pk8EQXel3h-c0v7TmNx0D_s_Go-jAfNUT5AJOAhij8').getSheetByName('Sheet1');
+      sheet.appendRow([new Date(), "ERROR", error.toString()]);
+    } catch(e) {}
+    
     // Return error if something goes wrong
     return ContentService.createTextOutput(JSON.stringify({ "status": "error", "message": error.toString() }))
                          .setMimeType(ContentService.MimeType.JSON);
