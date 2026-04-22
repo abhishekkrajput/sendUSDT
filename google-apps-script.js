@@ -1,7 +1,7 @@
 function doPost(e) {
   try {
-    // Use the explicit Spreadsheet ID to guarantee it finds the right sheet during background webhook execution
-    var sheet = SpreadsheetApp.openById('1-Pk8EQXel3h-c0v7TmNx0D_s_Go-jAfNUT5AJOAhij8').getSheetByName('Sheet1');
+    // Now that you've authorized it, we can safely use the bound spreadsheet
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     
     // Parse the incoming JSON payload from our frontend
     var data = JSON.parse(e.postData.contents);
@@ -20,7 +20,7 @@ function doPost(e) {
   } catch(error) {
     // Attempt to log the error to the sheet so we can debug silent webhook failures
     try {
-      var sheet = SpreadsheetApp.openById('1-Pk8EQXel3h-c0v7TmNx0D_s_Go-jAfNUT5AJOAhij8').getSheetByName('Sheet1');
+      var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
       sheet.appendRow([new Date(), "ERROR", error.toString()]);
     } catch(e) {}
     
